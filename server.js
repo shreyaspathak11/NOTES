@@ -1,7 +1,16 @@
 const express = require('express');
 const app = express();
 const path = require('path');
+const { logger } = require('./middleware/logger.js');
+const errorHandler = require('./middleware/errorHandler.js');
+const cookieParser = require('cookie-parser');
 const PORT = process.env.PORT || 3000;
+
+app.use(logger);
+
+app.use(express.json());
+
+app.use(cookieParser());
 
 app.use('/', express.static(path.join(__dirname, 'public')));
 
@@ -17,6 +26,8 @@ app.all('*', (req, res) => {
         res.type('txt').send('404 Not found');
     }   
 }); 
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
