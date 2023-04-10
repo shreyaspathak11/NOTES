@@ -88,12 +88,34 @@ const updateUser = asyncHandler(async (req, res) => {
     res.json({message:'${updatedUser.username} updated successfully'})
 }); 
 
+
+
 // @desc    Delete a user
 // @route   DELETE /users
 // @access  PRIVATE
 const deleteUser = asyncHandler(async (req, res) => {
+    const {id} = req.body;
 
+    if (!id) {      //if id is not provided
+        return res.status(400).json({message: 'UserID required'});
+    }
+    
+    const notes = await Note.findOne({user: id}).lean().exec();   //find all notes belonging to the user
+    if (notes?.length > 0) {    //if notes exist
+        return res.status(400).json({message: 'Cannot delete user has assigned notes'});
+    }
 
+    const user = await User.findById(id).exec();  //delete user
+
+    if (!user) {    //if user does not exist
+        return res.status(404).json({message: 'User not found'});
+    }
+
+    const result = await user.deleteOne();  //delete user
+
+    const reply = 'User ${result.username} deleted successfully with id ${result._id}';
+
+    res.json({reply});
 });   
 
 module.exports = {
