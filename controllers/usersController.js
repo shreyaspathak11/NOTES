@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt');
 // @access  Private/
 const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find().select('-password').lean();       //exclude password and convert to plain object
-    if(!users) {
+    if(!users?.length) {
         return res.status(404).json({message: 'No users found'});
     }
     res.json(users);
@@ -20,10 +20,10 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @route   POST /users
 // @access  PRIVATE
 const createNewUser = asyncHandler(async (req, res) => {
-    const {name, password, roles} = req.body;
+    const {username, password, roles} = req.body;
 
     /*Confirm data*/
-    if(!name || !password || !Array.isArray(roles) || roles.length === 0) {
+    if(!username || !password || !Array.isArray(roles) || !roles.length) {
         return res.status(400).json({message: 'All fields are required'});
     }
 
@@ -42,7 +42,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     const user = await User.create(userObject);
 
     if (user){ //created
-        res.status(201).json({message: 'User ${username} created successfully'});
+        res.status(201).json({message: 'User ${ username } created successfully'});
     }else{ //not created
         res.status(400).json({message: 'Invalid user data recieved'});      
     }   
@@ -55,11 +55,11 @@ const createNewUser = asyncHandler(async (req, res) => {
 // @route   PATCH /users
 // @access  PRIVATE
 const updateUser = asyncHandler(async (req, res) => {
-    const {id, username, password, roles, active} = req.body;
+    const { id, username, roles, active, password } = req.body
 
-    //Confirm data
-    if(!id || !username || !password || !Array.isArray(roles) || !roles.length || typeof active !== 'boolean') {
-        return res.status(400).json({message: 'All fields are required'});
+    // Confirm data 
+    if (!id || !username || !Array.isArray(roles) || !roles.length || typeof active !== 'boolean') {
+        return res.status(400).json({ message: 'All fields except password are required' })
     }
 
     const user = await User.findById(id).exec();
@@ -100,8 +100,8 @@ const deleteUser = asyncHandler(async (req, res) => {
         return res.status(400).json({message: 'UserID required'});
     }
     
-    const notes = await Note.findOne({user: id}).lean().exec();   //find all notes belonging to the user
-    if (notes?.length > 0) {    //if notes exist
+    const note = await Note.findOne({user: id}).lean().exec();   //find all notes belonging to the user
+    if (note) {    //if notes exist
         return res.status(400).json({message: 'Cannot delete user has assigned notes'});
     }
 
@@ -115,7 +115,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 
     const reply = 'User ${result.username} deleted successfully with id ${result._id}';
 
-    res.json({reply});
+    res.json(reply);
 });   
 
 module.exports = {
